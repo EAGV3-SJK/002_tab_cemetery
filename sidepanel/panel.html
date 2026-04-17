@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tab Cemetery Manager</title>
+  <link rel="stylesheet" href="panel.css">
+</head>
+<body>
+  <div id="app">
+    <header class="header">
+      <div class="logo">
+        <span class="logo-emoji">⚰️</span>
+        <h1>Tab Cemetery</h1>
+        <span id="tab-count-pill" class="pill hidden">0</span>
+      </div>
+      <div class="header-actions">
+        <button id="sessions-toggle" title="Saved sessions" class="icon-btn">📚</button>
+        <button id="settings-toggle" title="Settings" class="icon-btn">⚙️</button>
+      </div>
+    </header>
+
+    <section id="onboarding-view" class="view hidden">
+      <h2>Welcome to Tab Cemetery</h2>
+      <p>This extension reads titles and short snippets from your open tabs, sends them to Google Gemini, and groups them into themes.</p>
+      <h3>What is sent to Gemini</h3>
+      <ul>
+        <li>Tab <strong>title</strong>, <strong>URL</strong>, and up to <strong>500 characters</strong> of visible page text.</li>
+        <li>Nothing from <code>chrome://</code>, extension pages, or PDFs.</li>
+        <li>Nothing from domains you add to the exclude list.</li>
+        <li>Nothing at all if you enable <strong>Privacy Mode</strong>.</li>
+      </ul>
+      <p>You will need a free Gemini API key from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer">Google AI Studio</a>.</p>
+      <button id="onboarding-continue" class="btn primary">Continue to setup</button>
+    </section>
+
+    <section id="settings-view" class="view hidden">
+      <h2>Settings</h2>
+      <div class="setting-item">
+        <label for="api-key">Gemini API Key</label>
+        <input type="password" id="api-key" placeholder="Paste your Gemini API key">
+        <p class="help">Stored locally via <code>chrome.storage.sync</code>. Get one at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer">AI Studio</a>.</p>
+      </div>
+      <div class="setting-item">
+        <label for="max-clusters">Max clusters (3–10)</label>
+        <input type="number" id="max-clusters" min="3" max="10" value="8">
+      </div>
+      <div class="setting-item">
+        <label for="max-snippet">Max snippet length (100–1000)</label>
+        <input type="number" id="max-snippet" min="100" max="1000" step="50" value="500">
+      </div>
+      <div class="setting-item">
+        <label for="excluded-domains">Excluded domains (one per line)</label>
+        <textarea id="excluded-domains" rows="3" placeholder="mail.google.com&#10;banking.example.com"></textarea>
+        <p class="help">Tabs on these domains appear in the list but are never sent to Gemini.</p>
+      </div>
+      <div class="setting-item">
+        <label><input type="checkbox" id="privacy-mode"> Privacy mode — never send anything to Gemini</label>
+      </div>
+      <div class="row">
+        <button id="save-settings" class="btn primary">Save</button>
+        <button id="cancel-settings" class="btn secondary">Cancel</button>
+      </div>
+    </section>
+
+    <section id="sessions-view" class="view hidden">
+      <h2>Saved sessions</h2>
+      <p class="help">Each session is a snapshot of tabs. Opening does not auto-open tabs — it shows a list.</p>
+      <div id="sessions-list"></div>
+      <button id="close-sessions" class="btn secondary">Back</button>
+    </section>
+
+    <main id="main-view" class="view">
+      <div class="top-controls">
+        <div class="search-bar">
+          <input type="text" id="tab-search" placeholder="Filter by title or URL…">
+        </div>
+        <button id="refresh-tabs" class="btn secondary" title="Rescan tabs">🔄</button>
+      </div>
+
+      <section class="query-section">
+        <div class="query-input-wrap">
+          <input type="text" id="query-input" placeholder="What are you focused on right now?">
+          <button id="submit-query" class="btn primary">Go</button>
+        </div>
+        <div id="query-summary" class="hidden"></div>
+        <div id="relevance-actions" class="hidden">
+          <button id="close-irrelevant" class="btn danger sm">Close irrelevant tabs</button>
+          <button id="clear-relevance" class="btn secondary sm">Clear</button>
+        </div>
+      </section>
+
+      <div id="notice" class="notice hidden"></div>
+
+      <div id="loading-state" class="hidden">
+        <div class="spinner"></div>
+        <p id="loading-text">Scanning tabs…</p>
+        <div id="loading-progress" class="progress-bar hidden"><div id="loading-progress-fill"></div></div>
+      </div>
+
+      <div id="tabs-container">
+        <div class="empty-state"><p>Click <strong>🔄</strong> to scan your tabs.</p></div>
+      </div>
+
+      <div class="bottom-actions">
+        <button id="save-session" class="btn secondary sm">💾 Save session</button>
+        <button id="export-json" class="btn secondary sm">⬇ JSON</button>
+        <button id="export-md" class="btn secondary sm">⬇ Markdown</button>
+      </div>
+    </main>
+
+    <footer id="panel-footer" class="hidden">
+      <div class="selection-controls">
+        <span id="select-count">0 selected</span>
+        <div class="btn-group">
+          <button id="bulk-open-window" class="btn secondary sm">New window</button>
+          <button id="bulk-bookmark" class="btn secondary sm">Bookmark</button>
+          <button id="bulk-close" class="btn danger sm">Close</button>
+        </div>
+      </div>
+    </footer>
+
+    <div id="undo-toast" class="hidden">
+      <span id="undo-text">Tab closed.</span>
+      <button id="undo-btn">Undo</button>
+    </div>
+
+    <div id="modal" class="modal hidden">
+      <div class="modal-body">
+        <h3 id="modal-title">Confirm</h3>
+        <div id="modal-content"></div>
+        <div class="row end">
+          <button id="modal-cancel" class="btn secondary">Cancel</button>
+          <button id="modal-confirm" class="btn danger">Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="panel.js"></script>
+</body>
+</html>
