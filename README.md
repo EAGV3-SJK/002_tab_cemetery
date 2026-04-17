@@ -22,7 +22,7 @@
 ### 2. Load the Extension
 1.  Download or clone this repository to your local machine:
     ```bash
-    git clone https://github.com/jssunil/EAGV3-SJK.git
+    git clone https://github.com/EAGV3-SJK/002_tab_cemetery.git
     ```
 2.  Open Chrome and navigate to `chrome://extensions`.
 3.  Enable **Developer mode** (toggle in the top right).
